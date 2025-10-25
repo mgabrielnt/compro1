@@ -1,0 +1,20 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+.vercel/
+dist/
+coverage/
+
+# Env & lokal
+.env
+.env.*
+!.env.example
+
+# Logs & editor
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
