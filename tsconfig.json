@@ -23,7 +23,7 @@
         "components/*"
       ],
       "@/sections/*": [
-        "components/sections/*"
+        "components/(section)/*"
       ],
       "@/lib/*": [
         "lib/*"

@@ -33,12 +33,8 @@ export default function Hero({ lang }: { lang: Lang }) {
             </div>
           </div>
           <div className="lg:col-span-5">
-            <div className="aspect-[4/3] rounded-2xl border border-gray-200 bg-white shadow-sm p-4 grid place-items-center">
-              <div className="text-center">
-                <div className="text-sm text-gray-500 mb-2">{t("Executive view mockup","Mockup tampilan eksekutif")}</div>
-                <div className="mx-auto h-28 w-44 rounded-xl bg-gray-100 border border-gray-200"/>
-                <p className="mt-3 text-sm text-gray-600 max-w-xs mx-auto">{t("Replace with montage of platforms, dashboards, and design systems.","Ganti dengan montase platform, dashboard, dan design system.")}</p>
-              </div>
+             <div className="aspect-[4/3] rounded-2xl border border-gray-200 bg-white shadow-sm p-4 grid place-items-center">
+              <img src="/scene-10-light.png" alt="Scene 10 Light" />
             </div>
           </div>
         </div>

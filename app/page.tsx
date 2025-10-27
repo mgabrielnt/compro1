@@ -5,16 +5,16 @@ import type { Lang } from "@/lib/types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-import Hero from "@/sections/Hero";
-import Services from "@/sections/Services";
-import Differentiators from "@/sections/Differentiators";
-import CaseStudies from "@/sections/CaseStudies";
-import Industries from "@/sections/Industries";
-import Approach from "@/sections/Approach";
-import Alliances from "@/sections/Alliances";
-import Governance from "@/sections/Governance";
-import Insights from "@/sections/Insights";
-import AboutContact from "@/sections/AboutContact";
+import Hero from "@/components/(section)/Hero";
+import Services from "@/components/(section)/Services";
+import Differentiators from "@/components/(section)/Differentiators";
+import CaseStudies from "@/components/(section)/CaseStudies";
+import Industries from "@/components/(section)/Industries";
+import Approach from "@/components/(section)/Approach";
+import Alliances from "@/components/(section)/Alliances";
+import Governance from "@/components/(section)/Governance";
+import Insights from "@/components/(section)/Insights";
+import AboutContact from "@/components/(section)/AboutContact";
 
 export default function Page() {
   const [lang, setLang] = useState<Lang>("EN");

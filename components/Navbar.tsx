@@ -7,8 +7,8 @@ export default function Navbar({
   const t = (en: string, id: string) => (lang === "EN" ? en : id);
   const nav = [
     { id: "services", en: "Services", idn: "Layanan" },
-    { id: "industries", en: "Industries", idn: "Industri" },
     { id: "cases", en: "Case Studies", idn: "Studi Kasus" },
+    { id: "industries", en: "Industries", idn: "Industri" },
     { id: "approach", en: "Approach", idn: "Metodologi" },
     { id: "alliances", en: "Alliances", idn: "Aliansi" },
     { id: "governance", en: "Governance", idn: "Tata Kelola" },
