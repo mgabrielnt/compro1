@@ -9,7 +9,7 @@
     "lint": "next lint"
   },
   "engines": {
-    "node": ">=18.18.0"
+    "node": "20.x"
   },
   "dependencies": {
     "@notionhq/client": "^2.2.15",
@@ -24,8 +24,8 @@
   "devDependencies": {
     "@types/node": "^20.14.10",
     "@types/nodemailer": "^7.0.3",
-    "@types/react": "^18.3.26",
-    "@types/react-dom": "^18.3.7",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.19",
     "eslint": "^9.11.0",
     "eslint-config-next": "^16.0.0",
