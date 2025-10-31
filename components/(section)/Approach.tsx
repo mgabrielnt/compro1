@@ -31,7 +31,7 @@ export default function Approach({ lang = "EN" }: { lang?: Lang }) {
           t("Risk register", "Register risiko"),
           t("Success metrics", "Metrik kesuksesan"),
         ],
-        duration: t("2-4 weeks", "2-4 minggu"),
+        duration: t("25%", "25%"),
       },
       {
         title: t("Design", "Desain"),
@@ -47,7 +47,7 @@ export default function Approach({ lang = "EN" }: { lang?: Lang }) {
           t("UX prototypes", "Prototipe UX"),
           t("Delivery plan", "Rencana delivery"),
         ],
-        duration: t("3-6 weeks", "3-6 minggu"),
+        duration: t("50%", "50%"),
       },
       {
         title: t("Build", "Bangun"),
@@ -63,7 +63,7 @@ export default function Approach({ lang = "EN" }: { lang?: Lang }) {
           t("Test automation suite", "Test automation suite"),
           t("Technical documentation", "Dokumentasi teknis"),
         ],
-        duration: t("8-16 weeks", "8-16 minggu"),
+        duration: t("75%", "75%"),
       },
       {
         title: t("Run & Scale", "Operasi & Scale"),
@@ -79,7 +79,7 @@ export default function Approach({ lang = "EN" }: { lang?: Lang }) {
           t("Cost dashboards", "Dashboard biaya"),
           t("Training materials", "Materi pelatihan"),
         ],
-        duration: t("Ongoing", "Berkelanjutan"),
+        duration: t("100%", "100%"),
       },
     ],
     [lang, t]

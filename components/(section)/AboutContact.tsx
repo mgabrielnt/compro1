@@ -1,17 +1,16 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import type { Lang } from "@/lib/types";
 
 /**
- * About + Contact (industry‑tailored, v2)
+ * About + Contact (industry‑tailored, v3)
  * - Grayscale UI, no animations
- * - Industry → dynamic use‑cases, details hints, and recommended compliance
- * - Timeline, budget, contact method (Email/WA/Phone)
- * - NDA toggle, consent checkbox (required)
- * - Success goals & project phase chips (aligns with Discover/Design/Build/Run)
- * - Honeypot anti‑spam, UTM capture, timezone capture
- * - JSON POST to /api/contact with extra keys (API should accept/ignore unknown keys)
+ * - Replaces "RFP & Partnerships" with interactive Pricing & Packages
+ * - Currency toggle (IDR/USD)
+ * - Engagement tabs (Sprint / Project / Squad)
+ * - Sliders/inputs to estimate price; one‑click prefill into Contact form
+ * - Keeps existing industry/use‑case logic
  */
 
 export default function AboutContact({ lang }: { lang: Lang }) {
@@ -37,6 +36,9 @@ export default function AboutContact({ lang }: { lang: Lang }) {
   // Best effort local timezone + UTM capture
   const [timezone, setTimezone] = useState<string>("UTC");
   const [utm, setUtm] = useState<Record<string, string>>({});
+
+  // Ref to control the Budget <select> from Pricing section
+  const budgetRef = useRef<HTMLSelectElement | null>(null);
 
   useEffect(() => {
     try {
@@ -184,6 +186,275 @@ export default function AboutContact({ lang }: { lang: Lang }) {
     setSuccessGoals((prev) => (prev.includes(g) ? prev.filter((i) => i !== g) : [...prev, g]));
   }
 
+  // ===== Pricing & Packages state =====
+  type Currency = "IDR" | "USD";
+  const [currency, setCurrency] = useState<Currency>("IDR");
+  type Engagement = "sprint" | "project" | "squad";
+  const [engagement, setEngagement] = useState<Engagement>("sprint");
+
+  // Controls for each mode
+  const [sprints, setSprints] = useState<number>(3); // 1..6
+  const [projectScope, setProjectScope] = useState<"small" | "medium" | "large">("medium");
+  const [teamSize, setTeamSize] = useState<number>(4); // 2..8
+  const [months, setMonths] = useState<number>(3); // 1..12
+
+  // Rates (aligned to Budget dropdown buckets)
+  const RATES = {
+    IDR: {
+      sprintBase: 90_000_000, // per 2‑week sprint (3–4 person squad)
+      project: { small: 300_000_000, medium: 700_000_000, large: 1_600_000_000 },
+      squadPerFTE: 120_000_000, // monthly per FTE
+    },
+    USD: {
+      sprintBase: 12_000,
+      project: { small: 25_000, medium: 70_000, large: 120_000 },
+      squadPerFTE: 8_000,
+    },
+  } as const;
+
+  function fmt(n: number, cur: Currency) {
+    const locale = lang === "EN" ? "en-US" : "id-ID";
+    return new Intl.NumberFormat(locale, { style: "currency", currency: cur }).format(n);
+  }
+
+  function computeEstimate(): { total: number; monthly?: number } {
+    const r = RATES[currency];
+    if (engagement === "sprint") {
+      const total = r.sprintBase * sprints;
+      return { total };
+    }
+    if (engagement === "project") {
+      return { total: r.project[projectScope] };
+    }
+    // squad
+    const monthly = r.squadPerFTE * teamSize;
+    const total = monthly * months;
+    return { total, monthly };
+  }
+
+  function budgetBucket(amount: number, cur: Currency): string {
+    if (cur === "USD") {
+      if (amount < 25_000) return "$10k – $25k";
+      if (amount < 100_000) return "$25k – $100k";
+      return "$100k+";
+    } else {
+      if (amount < 400_000_000) return "Rp 150jt – Rp 400jt";
+      if (amount < 1_600_000_000) return "Rp 400jt – Rp 1,6M";
+      return "Rp 1,6M+";
+    }
+  }
+
+  function setBudgetSelect(labelOrValue: string) {
+    const sel = budgetRef.current;
+    if (!sel) return;
+    // Try by value first
+    for (let i = 0; i < sel.options.length; i++) {
+      const opt = sel.options[i];
+      if (opt.value === labelOrValue || opt.text === labelOrValue) {
+        sel.selectedIndex = i;
+        return;
+      }
+    }
+  }
+
+  function handleSelectPackage(tier: string) {
+    const { total, monthly } = computeEstimate();
+    const bucket = budgetBucket(total, currency);
+    setBudgetSelect(bucket);
+
+    const summary =
+      `\n\n[Prefill] ${lang === "EN" ? "Selected package" : "Paket dipilih"}: ${tier.toUpperCase()}\n` +
+      (engagement === "sprint"
+        ? `${sprints} ${lang === "EN" ? "sprint(s)" : "sprint"} (~${lang === "EN" ? "2 weeks each" : "2 minggu/sprint"})\n`
+        : engagement === "project"
+        ? `${lang === "EN" ? "Scope" : "Lingkup"}: ${projectScope.toUpperCase()}\n`
+        : `${lang === "EN" ? "Team size" : "Ukuran tim"}: ${teamSize} • ${months} ${lang === "EN" ? "month(s)" : "bulan"}\n`) +
+      `${lang === "EN" ? "Estimate" : "Estimasi"}: ${fmt(total, currency)}${monthly ? ` (${fmt(monthly, currency)} / ${lang === "EN" ? "month" : "bulan"})` : ""}\n` +
+      `${lang === "EN" ? "Budget bucket" : "Kisaran anggaran"}: ${bucket}\n` +
+      `${lang === "EN" ? "Currency" : "Mata uang"}: ${currency}`;
+
+    setDetails((prev) => (prev ? prev + summary : summary.trimStart()));
+    setDone({ ok: true, msg: t("Package copied to the form area.", "Paket disalin ke area formulir.") });
+  }
+
+  function PricingCard() {
+    const { total, monthly } = computeEstimate();
+
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-8">
+        <h3 className="text-lg font-semibold">{t("Pricing & Packages", "Range & Paket Harga")}</h3>
+
+        {/* Currency toggle */}
+        <div className="mt-4 flex items-center gap-3 text-xs text-gray-700">
+          <span className="font-medium">{t("Currency", "Mata uang")}</span>
+          <div className="inline-flex rounded-full border border-gray-300 overflow-hidden">
+            {(["IDR", "USD"] as Currency[]).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCurrency(c)}
+                className={[
+                  "px-3 py-1.5",
+                  currency === c ? "bg-black text-white" : "bg-white text-gray-700",
+                ].join(" ")}
+                aria-pressed={currency === c}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Engagement tabs */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {([
+            { k: "sprint", l: t("Sprint (2 weeks)", "Sprint (2 minggu)") },
+            { k: "project", l: t("Project (fixed scope)", "Proyek (lingkup tetap)") },
+            { k: "squad", l: t("Squad (monthly)", "Skuad (bulanan)") },
+          ] as { k: Engagement; l: string }[]).map((tab) => (
+            <button
+              key={tab.k}
+              type="button"
+              onClick={() => setEngagement(tab.k)}
+              className={[
+                "rounded-full border px-3 py-1 text-xs",
+                engagement === tab.k
+                  ? "bg-black text-white border-black"
+                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
+              ].join(" ")}
+              aria-pressed={engagement === tab.k}
+            >
+              {tab.l}
+            </button>
+          ))}
+        </div>
+
+        {/* Controls per engagement */}
+        <div className="mt-6 space-y-5 text-sm text-gray-700">
+          {engagement === "sprint" && (
+            <div>
+              <label className="font-medium">{t("Number of sprints", "Jumlah sprint")}: {sprints}</label>
+              <input
+                type="range"
+                min={1}
+                max={6}
+                step={1}
+                value={sprints}
+                onChange={(e) => setSprints(Number(e.target.value))}
+                className="mt-2 w-full"
+              />
+              <ul className="mt-3 list-disc pl-5 text-xs text-gray-600 space-y-1">
+                <li>{t("Each sprint includes strategy, design, and build focus.", "Setiap sprint mencakup strategi, desain, dan build.")}</li>
+                <li>{t("Useful for discovery, PoC, or incremental delivery.", "Cocok untuk discovery, PoC, atau delivery bertahap.")}</li>
+              </ul>
+            </div>
+          )}
+
+          {engagement === "project" && (
+            <div className="space-y-3">
+              <div className="font-medium">{t("Scope size", "Ukuran lingkup")}</div>
+              <div className="flex flex-wrap gap-2">
+                {(["small", "medium", "large"] as const).map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setProjectScope(s)}
+                    className={[
+                      "rounded-full border px-3 py-1 text-xs",
+                      projectScope === s
+                        ? "bg-black text-white border-black"
+                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100",
+                    ].join(" ")}
+                    aria-pressed={projectScope === s}
+                  >
+                    {s === "small" && t("Small (4–8 weeks)", "Kecil (4–8 minggu)")}
+                    {s === "medium" && t("Medium (8–16 weeks)", "Sedang (8–16 minggu)")}
+                    {s === "large" && t("Large (16+ weeks)", "Besar (16+ minggu)")}
+                  </button>
+                ))}
+              </div>
+              <ul className="list-disc pl-5 text-xs text-gray-600 space-y-1">
+                <li>{t("Fixed scope, milestones, and acceptance criteria.", "Lingkup tetap, milestone, dan kriteria penerimaan.")}</li>
+                <li>{t("Best for MVPs or re‑platforming.", "Cocok untuk MVP atau re‑platforming.")}</li>
+              </ul>
+            </div>
+          )}
+
+          {engagement === "squad" && (
+            <div className="grid sm:grid-cols-2 gap-4">
+              <div>
+                <label className="font-medium">{t("Team size (FTE)", "Ukuran tim (FTE)")}: {teamSize}</label>
+                <input
+                  type="range"
+                  min={2}
+                  max={8}
+                  step={1}
+                  value={teamSize}
+                  onChange={(e) => setTeamSize(Number(e.target.value))}
+                  className="mt-2 w-full"
+                />
+              </div>
+              <div>
+                <label className="font-medium">{t("Duration (months)", "Durasi (bulan)")}: {months}</label>
+                <input
+                  type="range"
+                  min={1}
+                  max={12}
+                  step={1}
+                  value={months}
+                  onChange={(e) => setMonths(Number(e.target.value))}
+                  className="mt-2 w-full"
+                />
+                {monthly && (
+                  <div className="mt-2 text-xs text-gray-600">{t("Monthly", "Bulanan")}: <span className="font-medium">{fmt(monthly, currency)}</span></div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Estimate & CTA */}
+        <div className="mt-6 rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="text-sm text-gray-700">
+            <div className="font-semibold">{t("Estimated investment", "Perkiraan investasi")}</div>
+            <div className="mt-1 text-2xl font-semibold tracking-tight">{fmt(total, currency)}</div>
+            <div className="mt-1 text-xs text-gray-600">
+              {t("Taxes and tooling not included. Exact quote after scoping.", "Belum termasuk pajak & tooling. Penawaran final setelah scoping.")}
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleSelectPackage(engagement)}
+              className="inline-flex items-center rounded-full bg-black text-white px-4 py-2 text-sm font-medium hover:bg-gray-900"
+            >
+              {t("Use this in the form", "Gunakan di formulir")}
+            </button>
+            <div className="text-xs text-gray-600">
+              {t("Will prefill budget and add a summary in Project details.", "Akan mengisi anggaran & menambahkan ringkasan di Detail proyek.")}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick package hints */}
+        <div className="mt-6 grid sm:grid-cols-3 gap-3 text-xs text-gray-700">
+          <div className="rounded-xl border border-gray-200 bg-white p-3">
+            <div className="font-semibold text-gray-900">{t("Sprint Pack", "Sprint Pack")}</div>
+            <div>{t("2 weeks, outcome‑driven increments.", "2 minggu, inkremen berorientasi hasil.")}</div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-3">
+            <div className="font-semibold text-gray-900">{t("Project", "Proyek")}</div>
+            <div>{t("Fixed scope & milestones.", "Lingkup & milestone tetap.")}</div>
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-3">
+            <div className="font-semibold text-gray-900">{t("Dedicated Squad", "Skuad Dedikasi")}</div>
+            <div>{t("Monthly, flexible backlog.", "Bulanan, backlog fleksibel.")}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
@@ -223,6 +494,8 @@ export default function AboutContact({ lang }: { lang: Lang }) {
       return;
     }
 
+    const { total, monthly } = computeEstimate();
+
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
@@ -246,6 +519,11 @@ export default function AboutContact({ lang }: { lang: Lang }) {
           phase,
           attachmentUrl,
           utm,
+          // Extra (API expected to accept/ignore unknown keys)
+          package: engagement,
+          currency,
+          estimateTotal: total,
+          estimateMonthly: monthly,
         }),
       });
       const json = await res.json().catch(() => ({}));
@@ -317,27 +595,8 @@ export default function AboutContact({ lang }: { lang: Lang }) {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-gray-200 bg-white p-8">
-              <h3 className="text-lg font-semibold">{t("RFP & Partnerships", "RFP & Kemitraan")}</h3>
-              <div className="mt-3 text-sm text-gray-700 space-y-3">
-                <div>
-                  <div className="font-medium">RFP / RFQ</div>
-                  <div className="text-gray-600">hello@signalist.consulting</div>
-                </div>
-                <div>
-                  <div className="font-medium">{t("Press & Media", "Pers & Media")}</div>
-                  <div className="text-gray-600">press@signalist.consulting</div>
-                </div>
-                <div>
-                  <div className="font-medium">{t("Offices", "Kantor")}</div>
-                  <ul className="mt-2 space-y-2">
-                    <li>Jakarta — {t("SCBD District", "Kawasan SCBD")}</li>
-                    <li>Singapore — {t("Marina Bay Area", "Kawasan Marina Bay")}</li>
-                    <li>Remote‑first — GMT+7 / GMT+8</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
+            {/* Replaced: RFP & Partnerships -> Interactive Pricing */}
+            <PricingCard />
           </div>
         </div>
       </section>
@@ -378,43 +637,43 @@ export default function AboutContact({ lang }: { lang: Lang }) {
 
                 {/* Row 3: Industry + Timeline */}
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">{t("Industry", "Industri")}</label>
-                    <select
-                      name="industry"
-                      value={industry}
-                      onChange={(e) => { setIndustry(e.target.value); setUseCases([]); }}
-                      className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
-                    >
-                      {INDUSTRIES.map((ind) => (
-                        <option key={ind.key} value={ind.key}>{ind.label}</option>
-                      ))}
-                    </select>
-                    {/* Recommended compliance note */}
-                    <div className="mt-1 text-xs text-gray-500">
-                      {t("Recommended:", "Rekomendasi:")}{" "}
-                      {RECOMMENDED_BY_INDUSTRY[industry].map((k) => COMPLIANCE.find((c) => c.key === k)?.label).filter(Boolean).join(", ")}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">{t("Timeline", "Timeline")}</label>
-                    <select name="timeline" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black">
-                      <option value="asap">{t("ASAP (≤1 month)", "Secepatnya (≤1 bulan)")}</option>
-                      <option value="1-3m">{t("1–3 months", "1–3 bulan")}</option>
-                      <option value=">3m">{t(">3 months", ">3 bulan")}</option>
-                    </select>
-                  </div>
+                <div>
+                <label className="text-sm font-medium">{t("Industry", "Industri")}</label>
+                <select
+                name="industry"
+                value={industry}
+                onChange={(e) => { setIndustry(e.target.value); setUseCases([]); }}
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+                >
+                {INDUSTRIES.map((ind) => (
+                <option key={ind.key} value={ind.key}>{ind.label}</option>
+                ))}
+                </select>
+                {/* Recommended compliance note */}
+                <div className="mt-1 text-xs text-gray-500">
+                {t("Recommended:", "Rekomendasi:")}{" "}
+                {RECOMMENDED_BY_INDUSTRY[industry].map((k) => COMPLIANCE.find((c) => c.key === k)?.label).filter(Boolean).join(", ")}
+                </div>
+                </div>
+                <div>
+                <label className="text-sm font-medium">{t("Timeline", "Timeline")}</label>
+                <select name="timeline" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black">
+                <option value="asap">{t("ASAP (≤1 month)", "Secepatnya (≤1 bulan)")}</option>
+                <option value="1-3m">{t("1–3 months", "1–3 bulan")}</option>
+                <option value=">3m">{t(">3 months", ">3 bulan")}</option>
+                </select>
+                </div>
                 </div>
 
                 {/* Row 4: Budget + Contact method */}
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium">{t("Budget", "Anggaran")}</label>
-                    <select name="budget" className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black">
+                    <select name="budget" ref={budgetRef} className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black">
                       <option value="tbd">{t("Select / TBD", "Pilih / TBD")}</option>
-                      <option>$10k – $25k</option>
-                      <option>$25k – $100k</option>
-                      <option>$100k+</option>
+                      <option>{lang === "EN" ? "$10k – $25k" : "Rp 150jt – Rp 400jt"}</option>
+                      <option>{lang === "EN" ? "$25k – $100k" : "Rp 400jt – Rp 1,6M"}</option>
+                      <option>{lang === "EN" ? "$100k+" : "Rp 1,6M+"}</option>
                     </select>
                   </div>
                   <div>
@@ -615,9 +874,13 @@ export default function AboutContact({ lang }: { lang: Lang }) {
                 </li>
               </ul>
 
+              {/* Replaced the small RFP block with Sales & Pricing */}
               <div className="mt-6 text-sm">
-                <div className="font-semibold">{t("RFP & partnerships", "RFP & kemitraan")}</div>
-                <a href="mailto:hello@signalist.consulting" className="underline">hello@signalist.consulting</a>
+                <div className="font-semibold">{t("Sales & pricing", "Penjualan & harga")}</div>
+                <div className="text-gray-700">
+                  {t("Questions? Email", "Ada pertanyaan? Email")} {" "}
+                  <a href="mailto:hello@signalist.consulting" className="underline">hello@signalist.consulting</a>
+                </div>
               </div>
 
               <div className="mt-6 grid gap-3 text-xs text-gray-600">

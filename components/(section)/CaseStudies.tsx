@@ -101,7 +101,7 @@ export default function CaseStudies({ lang = "EN" }: { lang?: Lang }) {
           <div className="flex items-end justify-between">
             <div>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                {t("Selected case studies", "Studi kasus pilihan")}
+                {t("Selected case ", "Studi kasus ")}
               </h2>
               <p className="mt-2 text-gray-600">{t("Real-world impact across industries", "Dampak nyata di berbagai industri")}</p>
             </div>

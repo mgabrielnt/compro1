@@ -10,25 +10,11 @@ export default function Services({ lang }: { lang: Lang }) {
   const [detail, setDetail] = useState<null | Service>(null);
 
   const cards: Service[] = [
-    {
-      title: t("Strategy & Transformation","Strategi & Transformasi"),
-      desc: t("From value cases and OKRs to operating model, governance, and enterprise architecture.","Dari value case & OKR ke model operasional, tata kelola, dan arsitektur enterprise."),
-      pts: [t("Digital strategy & value cases","Strategi digital & value case"), t("Operating model & governance","Model operasional & tata kelola"), t("Enterprise architecture","Arsitektur enterprise")]
-    },
-    {
-      title: t("Cloud & Platform","Cloud & Platform"),
-      desc: t("Design/run modern cloud platforms, platform engineering (IDP), SRE, and FinOps.","Merancang/menjalankan platform cloud modern, platform engineering (IDP), SRE, dan FinOps."),
-      pts: [t("Cloud migration & modernization","Migrasi & modernisasi cloud"), t("Platform engineering / IDP","Platform engineering / IDP"), t("DevSecOps & SRE","DevSecOps & SRE")]
-    },
+  
     {
       title: t("Data & AI","Data & AI"),
       desc: t("Enterprise data platforms, analytics/ML/GenAI with proper MLOps and governance.","Platform data enterprise, analytics/ML/GenAI dengan MLOps dan tata kelola yang tepat."),
       pts: [t("Data platforms / MDS","Platform data / MDS"), t("Analytics, ML & GenAI","Analitik, ML & GenAI"), t("MLOps & governance","MLOps & tata kelola")]
-    },
-    {
-      title: t("Enterprise Engineering","Rekayasa Enterprise"),
-      desc: t("Build/modernize services & APIs, integrate ERP/CRM, and retire legacy safely.","Bangun/modernisasi layanan & API, integrasi ERP/CRM, dan pensiunkan legacy secara aman."),
-      pts: [t("Microservices & APIs","Microservices & API"), t("ERP/CRM integration","Integrasi ERP/CRM"), t("Legacy modernization","Modernisasi legacy")]
     },
     {
       title: t("Cybersecurity","Keamanan Siber"),
@@ -40,18 +26,9 @@ export default function Services({ lang }: { lang: Lang }) {
       desc: t("Research to delivery of design systems and accessible interfaces.","Riset hingga delivery design system dan antarmuka yang aksesibel."),
       pts: [t("Discovery & UX research","Discovery & riset UX"), t("Design systems & UI","Design system & UI"), t("Accessibility & usability","Aksesibilitas & kegunaan")]
     },
+   
     {
-      title: t("Operations & Automation","Operasi & Otomasi"),
-      desc: t("ITSM/ESM, ServiceNow, AIOps/observability, RPA & process mining.","ITSM/ESM, ServiceNow, AIOps/observability, RPA & process mining."),
-      pts: [t("ITSM/ESM & ServiceNow","ITSM/ESM & ServiceNow"), t("AIOps & observability","AIOps & observability"), t("Process mining & RPA","Process mining & RPA")]
-    },
-    {
-      title: t("Risk & Compliance","Risiko & Kepatuhan"),
-      desc: t("GRC platforms, privacy/ethics, and resilience planning (BCP/DR).","Platform GRC, privasi/etika, dan perencanaan ketahanan (BCP/DR)."),
-      pts: [t("GRC platforms","Platform GRC"), t("Data privacy & ethics","Privasi data & etika"), t("BCP/DR & resiliency","BCP/DR & resiliensi")]
-    },
-    {
-      title: t("Industry Solutions","Solusi Industri"),
+      title: t("Web development","Pengembangan web"),
       desc: t("Prebuilt blueprints for FSI, Telco, and Public sector to accelerate outcomes.","Blueprint siap pakai untuk FSI, Telco, dan sektor Publik untuk mempercepat hasil."),
       pts: [t("FSI: onboarding, KYC, risk","FSI: onboarding, KYC, risiko"), t("Telco: BSS/OSS, 5G","Telco: BSS/OSS, 5G"), t("Public: ID stack & e‑Gov","Publik: ID stack & e‑Gov")]
     },
